@@ -1157,10 +1157,10 @@ export default function CassettePlayer() {
               <Text style={styles.createNewText}>Create New Tape</Text>
             </TouchableOpacity>
 
-            {tapes.length > 0 && (
+            {tapes.filter(t => t.id !== 'default-tape-1985').length > 0 && (
               <ScrollView style={styles.tapeList} showsVerticalScrollIndicator={false}>
-                <Text style={styles.tapeListTitle}>My Tape Stack ({tapes.length}/50)</Text>
-                {tapes.map((tape) => {
+                <Text style={styles.tapeListTitle}>My Tape Stack ({tapes.filter(t => t.id !== 'default-tape-1985').length}/50)</Text>
+                {tapes.filter(t => t.id !== 'default-tape-1985').map((tape) => {
                   const style = getTapeStyle(tape.styleId);
                   return (
                     <TouchableOpacity

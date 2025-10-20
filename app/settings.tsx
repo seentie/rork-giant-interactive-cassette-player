@@ -103,7 +103,7 @@ export default function Settings() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     
-    const userTapesCount = tapes.length;
+    const userTapesCount = tapes.filter(t => t.id !== 'default-tape-1985').length;
     
     if (userTapesCount === 0) {
       Alert.alert(
@@ -420,7 +420,7 @@ export default function Settings() {
                 <View style={styles.dangerButtonTextContainer}>
                   <Text style={styles.dangerButtonText}>Delete All Tapes</Text>
                   <Text style={styles.dangerButtonSubtext}>
-                    Permanently remove all {tapes.length} tape{tapes.length !== 1 ? 's' : ''}
+                    Permanently remove all {tapes.filter(t => t.id !== 'default-tape-1985').length} tape{tapes.filter(t => t.id !== 'default-tape-1985').length !== 1 ? 's' : ''}
                   </Text>
                 </View>
               </View>

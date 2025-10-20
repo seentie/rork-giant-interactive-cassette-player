@@ -402,8 +402,20 @@ const saveTapeLabelSettings = async (settings: TapeLabelSettings): Promise<void>
   }
 };
 
+const DEFAULT_TAPE_ID = 'default-tape-1985';
+
+const getDefaultTape = (): CustomTape => ({
+  id: DEFAULT_TAPE_ID,
+  name: "My Best Mix Tape '85",
+  to: '',
+  description: 'weekend radio mix',
+  createdAt: new Date('1985-01-01').toISOString(),
+  styleId: 'classic-red',
+  font: 'default-bold',
+});
+
 export const [TapeProvider, useTapes] = createContextHook(() => {
-  const [tapes, setTapes] = useState<CustomTape[]>([]);
+  const [tapes, setTapes] = useState<CustomTape[]>([getDefaultTape()]);
   const [currentTapeId, setCurrentTapeId] = useState<string | null>(null);
   const [tapeLabelSettings, setTapeLabelSettings] = useState<TapeLabelSettings>({ font: 'default' });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -423,8 +435,12 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
         console.log('Loaded tapes:', JSON.stringify(loadedTapes.map(t => ({ id: t.id, name: t.name }))));
         
         if (mounted) {
-          console.log('Setting tapes in state:', loadedTapes.length);
-          setTapes(loadedTapes);
+          const defaultTape = getDefaultTape();
+          const hasDefaultTape = loadedTapes.some(t => t.id === DEFAULT_TAPE_ID);
+          const allTapes = hasDefaultTape ? loadedTapes : [defaultTape, ...loadedTapes];
+          
+          console.log('Setting tapes in state:', allTapes.length);
+          setTapes(allTapes);
           setTapeLabelSettings(settings);
           setIsLoaded(true);
         }
@@ -445,8 +461,9 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
 
   useEffect(() => {
     if (isLoaded) {
-      console.log('Tapes changed, persisting to storage. Count:', tapes.length);
-      saveStoredTapes(tapes).catch(error => {
+      const tapesToSave = tapes.filter(t => t.id !== DEFAULT_TAPE_ID);
+      console.log('Tapes changed, persisting to storage. Count:', tapesToSave.length, '(excluding default)');
+      saveStoredTapes(tapesToSave).catch(error => {
         console.error('Failed to persist tapes on change:', error);
       });
     }
@@ -460,7 +477,8 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
     font: TapeFont,
     playlistUrl?: string
   ) => {
-    if (tapes.length >= 50) {
+    const userTapesCount = tapes.filter(t => t.id !== DEFAULT_TAPE_ID).length;
+    if (userTapesCount >= 50) {
       throw new Error('Maximum of 50 tapes reached');
     }
     
@@ -495,6 +513,11 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
   }, [tapes]);
 
   const deleteTape = useCallback(async (id: string) => {
+    if (id === DEFAULT_TAPE_ID) {
+      console.log('Cannot delete default tape');
+      return;
+    }
+    
     const updatedTapes = tapes.filter(tape => tape.id !== id);
     console.log('Deleting tape. Remaining:', updatedTapes.length);
     setTapes(updatedTapes);
@@ -507,9 +530,10 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
 
   const deleteAllTapes = useCallback(() => {
     console.log('Deleting all tapes. Count before:', tapes.length);
-    setTapes([]);
+    const defaultTape = getDefaultTape();
+    setTapes([defaultTape]);
     setCurrentTapeId(null);
-    console.log('All tapes deleted, will be auto-saved by useEffect');
+    console.log('All user tapes deleted, default tape retained, will be auto-saved by useEffect');
   }, [tapes]);
 
   const selectTape = useCallback((id: string | null) => {
