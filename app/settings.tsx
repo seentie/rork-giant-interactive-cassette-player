@@ -52,7 +52,7 @@ const getFontFamily = (font: TapeFont): string => {
 };
 
 export default function Settings() {
-  const { tapeLabelSettings, updateTapeLabelFont, tapes, deleteTape } = useTapes();
+  const { tapeLabelSettings, updateTapeLabelFont, tapes, deleteAllTapes } = useTapes();
   
   const handleClose = () => {
     if (Platform.OS !== "web") {
@@ -134,10 +134,7 @@ export default function Settings() {
               await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             }
             
-            const tapeIds = tapes.map(t => t.id);
-            for (const id of tapeIds) {
-              await deleteTape(id);
-            }
+            deleteAllTapes();
             
             Alert.alert(
               "Tapes Deleted",

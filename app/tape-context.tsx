@@ -505,6 +505,13 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
     }
   }, [tapes, currentTapeId]);
 
+  const deleteAllTapes = useCallback(() => {
+    console.log('Deleting all tapes. Count before:', tapes.length);
+    setTapes([]);
+    setCurrentTapeId(null);
+    console.log('All tapes deleted, will be auto-saved by useEffect');
+  }, [tapes]);
+
   const selectTape = useCallback((id: string | null) => {
     setCurrentTapeId(id);
   }, []);
@@ -536,6 +543,7 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
     createTape,
     updateTape,
     deleteTape,
+    deleteAllTapes,
     selectTape,
     getTapeById,
     getTapeStyle,
@@ -549,6 +557,7 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
     createTape,
     updateTape,
     deleteTape,
+    deleteAllTapes,
     selectTape,
     getTapeById,
     getTapeStyle,
