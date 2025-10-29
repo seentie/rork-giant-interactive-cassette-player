@@ -678,8 +678,8 @@ export default function CassettePlayer() {
     outputRange: [1, 0.5, 0, 0.5, 1],
   });
 
-  const landscapeCassetteWidth = Math.min(width * 0.85, height * 1.2);
-  const landscapeCassetteHeight = landscapeCassetteWidth * 0.62;
+  const landscapeCassetteHeight = height * 0.75;
+  const landscapeCassetteWidth = landscapeCassetteHeight / 0.62;
 
   if (isLandscape) {
     return (
