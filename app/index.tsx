@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Animated,
   TouchableOpacity,
-  Dimensions,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -19,9 +18,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useTapes, TAPE_STYLES } from "./tape-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CASSETTE_WIDTH = SCREEN_WIDTH * 0.85;
-const CASSETTE_HEIGHT = CASSETTE_WIDTH * 0.62;
+
 
 type ColorScheme = {
   name: string;
@@ -272,6 +269,11 @@ const COLOR_SCHEMES: ColorScheme[] = [
 
 const getFontFamily = (font: string): string => {
   try {
+    if (!font || typeof font !== 'string') {
+      console.warn('[Font] Invalid font parameter:', font);
+      return Platform.OS === 'android' ? 'sans-serif' : 'System';
+    }
+    
     switch (font) {
       case 'handwriting':
         return Platform.select({
@@ -369,9 +371,12 @@ const generateSparkles = (count: number, width: number, height: number): Sparkle
 export default function CassettePlayer() {
   const { currentTape, tapes, getTapeStyle, selectTape } = useTapes();
   const dimensions = useWindowDimensions();
-  const width = dimensions?.width || 375;
-  const height = dimensions?.height || 667;
+  const width = Math.max(dimensions?.width || 375, 1);
+  const height = Math.max(dimensions?.height || 667, 1);
   const isLandscape = width > height;
+  const SCREEN_WIDTH = width;
+  const CASSETTE_WIDTH = SCREEN_WIDTH * 0.85;
+  const CASSETTE_HEIGHT = CASSETTE_WIDTH * 0.62;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRewinding, setIsRewinding] = useState(false);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
@@ -391,7 +396,14 @@ export default function CassettePlayer() {
   const sparkleAnimations = useRef<Animated.CompositeAnimation[]>([]);
 
   const currentScheme = COLOR_SCHEMES[currentSchemeIndex] || COLOR_SCHEMES[0];
-  const tapeStyle = currentTape ? getTapeStyle(currentTape.styleId) : TAPE_STYLES[0];
+  const tapeStyle = useMemo(() => {
+    try {
+      return currentTape ? getTapeStyle(currentTape.styleId) : TAPE_STYLES[0];
+    } catch (error) {
+      console.error('[TapeStyle] Error getting tape style:', error);
+      return TAPE_STYLES[0];
+    }
+  }, [currentTape, getTapeStyle]);
   const isStarryNight = currentScheme.name === 'Starry Night';
   const isDiscoBall = currentScheme.name === 'Disco Ball Gold' || currentScheme.name === 'Disco Ball Silver';
   const isPastelMode = currentScheme.name.includes('Pastel');
@@ -419,91 +431,141 @@ export default function CassettePlayer() {
   }, [isLandscape]);
 
   useEffect(() => {
-    if (isStarryNight) {
+    if (isStarryNight && width > 0 && height > 0) {
       const newStars = generateStars(100, width, height);
       setStars(newStars);
 
-      starAnimations.current.forEach(anim => anim.stop());
+      starAnimations.current.forEach(anim => {
+        try {
+          anim.stop();
+        } catch (e) {
+          console.warn('[Animation] Failed to stop star animation:', e);
+        }
+      });
       starAnimations.current = [];
 
       newStars.forEach((star) => {
-        const twinkle = Animated.loop(
-          Animated.sequence([
-            Animated.timing(star.opacity, {
-              toValue: 1,
-              duration: 1000 + Math.random() * 1000,
-              useNativeDriver: true,
-            }),
-            Animated.timing(star.opacity, {
-              toValue: 0.2,
-              duration: 1000 + Math.random() * 1000,
-              useNativeDriver: true,
-            }),
-          ])
-        );
-        setTimeout(() => twinkle.start(), star.twinkleDelay);
-        starAnimations.current.push(twinkle);
+        try {
+          const twinkle = Animated.loop(
+            Animated.sequence([
+              Animated.timing(star.opacity, {
+                toValue: 1,
+                duration: 1000 + Math.random() * 1000,
+                useNativeDriver: true,
+              }),
+              Animated.timing(star.opacity, {
+                toValue: 0.2,
+                duration: 1000 + Math.random() * 1000,
+                useNativeDriver: true,
+              }),
+            ])
+          );
+          setTimeout(() => {
+            try {
+              twinkle.start();
+            } catch (e) {
+              console.warn('[Animation] Failed to start star twinkle:', e);
+            }
+          }, star.twinkleDelay);
+          starAnimations.current.push(twinkle);
+        } catch (e) {
+          console.warn('[Animation] Failed to create star animation:', e);
+        }
       });
     } else {
-      starAnimations.current.forEach(anim => anim.stop());
+      starAnimations.current.forEach(anim => {
+        try {
+          anim.stop();
+        } catch (e) {
+          console.warn('[Animation] Failed to stop star animation on cleanup:', e);
+        }
+      });
       starAnimations.current = [];
       setStars([]);
     }
 
     return () => {
-      starAnimations.current.forEach(anim => anim.stop());
+      starAnimations.current.forEach(anim => {
+        try {
+          anim.stop();
+        } catch (e) {
+          console.warn('[Animation] Failed to stop star animation on unmount:', e);
+        }
+      });
       starAnimations.current = [];
     };
   }, [isStarryNight, width, height]);
 
   useEffect(() => {
-    if (isDiscoBall) {
+    if (isDiscoBall && width > 0 && height > 0) {
       const newSparkles = generateSparkles(30, width, height);
       setSparkles(newSparkles);
 
-      sparkleAnimations.current.forEach(anim => anim.stop());
+      sparkleAnimations.current.forEach(anim => {
+        try {
+          anim.stop();
+        } catch (e) {
+          console.warn('[Animation] Failed to stop sparkle animation:', e);
+        }
+      });
       sparkleAnimations.current = [];
 
       newSparkles.forEach((sparkle) => {
-        const sparkleAnim = Animated.loop(
-          Animated.parallel([
-            Animated.sequence([
-              Animated.timing(sparkle.opacity, {
-                toValue: 1,
-                duration: 300 + Math.random() * 500,
-                useNativeDriver: true,
-              }),
-              Animated.timing(sparkle.opacity, {
-                toValue: 0,
-                duration: 300 + Math.random() * 500,
-                useNativeDriver: true,
-              }),
-            ]),
-            Animated.sequence([
-              Animated.timing(sparkle.scale, {
-                toValue: 1.2,
-                duration: 300 + Math.random() * 500,
-                useNativeDriver: true,
-              }),
-              Animated.timing(sparkle.scale, {
-                toValue: 0.5,
-                duration: 300 + Math.random() * 500,
-                useNativeDriver: true,
-              }),
-            ]),
-          ])
-        );
-        sparkleAnim.start();
-        sparkleAnimations.current.push(sparkleAnim);
+        try {
+          const sparkleAnim = Animated.loop(
+            Animated.parallel([
+              Animated.sequence([
+                Animated.timing(sparkle.opacity, {
+                  toValue: 1,
+                  duration: 300 + Math.random() * 500,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(sparkle.opacity, {
+                  toValue: 0,
+                  duration: 300 + Math.random() * 500,
+                  useNativeDriver: true,
+                }),
+              ]),
+              Animated.sequence([
+                Animated.timing(sparkle.scale, {
+                  toValue: 1.2,
+                  duration: 300 + Math.random() * 500,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(sparkle.scale, {
+                  toValue: 0.5,
+                  duration: 300 + Math.random() * 500,
+                  useNativeDriver: true,
+                }),
+              ]),
+            ])
+          );
+          sparkleAnim.start();
+          sparkleAnimations.current.push(sparkleAnim);
+        } catch (e) {
+          console.warn('[Animation] Failed to create sparkle animation:', e);
+        }
       });
     } else {
-      sparkleAnimations.current.forEach(anim => anim.stop());
+      sparkleAnimations.current.forEach(anim => {
+        try {
+          anim.stop();
+        } catch (e) {
+          console.warn('[Animation] Failed to stop sparkle animation on cleanup:', e);
+        }
+      });
       sparkleAnimations.current = [];
       setSparkles([]);
     }
 
     return () => {
-      sparkleAnimations.current.forEach(anim => anim.stop());
+      sparkleAnimations.current.forEach(anim => {
+        try {
+          anim.stop();
+        } catch (e) {
+          console.warn('[Animation] Failed to stop sparkle animation on unmount:', e);
+        }
+      });
       sparkleAnimations.current = [];
     };
   }, [isDiscoBall, width, height]);
@@ -1285,8 +1347,8 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   cassetteContainer: {
-    width: CASSETTE_WIDTH,
-    height: CASSETTE_HEIGHT,
+    width: '85%',
+    aspectRatio: 1 / 0.62,
     marginBottom: 20,
   },
 
@@ -1355,7 +1417,7 @@ const styles = StyleSheet.create({
   },
   tapeWindow: {
     flexDirection: "row",
-    height: CASSETTE_HEIGHT * 0.35,
+    flex: 0.35,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     borderRadius: 4,
     padding: 10,
@@ -1363,8 +1425,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   reelContainer: {
-    width: CASSETTE_WIDTH * 0.22,
-    height: CASSETTE_WIDTH * 0.22,
+    width: 70,
+    height: 70,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1432,7 +1494,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold" as const,
   },
   controlPanel: {
-    width: CASSETTE_WIDTH,
+    width: '85%',
     height: 120,
     borderRadius: 15,
     overflow: "hidden",
