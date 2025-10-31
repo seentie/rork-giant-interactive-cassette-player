@@ -271,55 +271,60 @@ const COLOR_SCHEMES: ColorScheme[] = [
 ];
 
 const getFontFamily = (font: string): string => {
-  switch (font) {
-    case 'handwriting':
-      return Platform.select({
-        ios: 'Bradley Hand',
-        android: 'cursive',
-        default: 'cursive'
-      }) || 'cursive';
-    case 'handwriting-bold':
-      return Platform.select({
-        ios: 'Snell Roundhand',
-        android: 'casual',
-        web: 'Brush Script MT, cursive',
-        default: 'cursive'
-      }) || 'cursive';
-    case 'monospace':
-    case 'monospace-bold':
-      return Platform.select({
-        ios: 'Courier New',
-        android: 'monospace',
-        default: 'monospace'
-      }) || 'monospace';
-    case 'serif':
-    case 'serif-bold':
-      return Platform.select({
-        ios: 'Georgia',
-        android: 'serif',
-        default: 'serif'
-      }) || 'serif';
-    case 'bold':
-      return Platform.select({
-        ios: 'System',
-        android: 'sans-serif-medium',
-        default: 'System'
-      }) || 'System';
-    case 'sharpie':
-    case 'sharpie-bold':
-      return Platform.select({
-        ios: 'Snell Roundhand',
-        android: 'casual',
-        web: 'Caveat, cursive',
-        default: 'cursive'
-      }) || 'cursive';
-    case 'default-bold':
-    default:
-      return Platform.select({
-        ios: 'System',
-        android: 'sans-serif',
-        default: 'System'
-      }) || 'System';
+  try {
+    switch (font) {
+      case 'handwriting':
+        return Platform.select({
+          ios: 'Bradley Hand',
+          android: 'cursive',
+          default: 'cursive'
+        }) || 'cursive';
+      case 'handwriting-bold':
+        return Platform.select({
+          ios: 'Snell Roundhand',
+          android: 'casual',
+          web: 'Brush Script MT, cursive',
+          default: 'cursive'
+        }) || 'cursive';
+      case 'monospace':
+      case 'monospace-bold':
+        return Platform.select({
+          ios: 'Courier New',
+          android: 'monospace',
+          default: 'monospace'
+        }) || 'monospace';
+      case 'serif':
+      case 'serif-bold':
+        return Platform.select({
+          ios: 'Georgia',
+          android: 'serif',
+          default: 'serif'
+        }) || 'serif';
+      case 'bold':
+        return Platform.select({
+          ios: 'System',
+          android: 'sans-serif-medium',
+          default: 'System'
+        }) || 'System';
+      case 'sharpie':
+      case 'sharpie-bold':
+        return Platform.select({
+          ios: 'Snell Roundhand',
+          android: 'casual',
+          web: 'Caveat, cursive',
+          default: 'cursive'
+        }) || 'cursive';
+      case 'default-bold':
+      default:
+        return Platform.select({
+          ios: 'System',
+          android: 'sans-serif',
+          default: 'System'
+        }) || 'System';
+    }
+  } catch (error) {
+    console.error('[Font] Error selecting font:', error);
+    return Platform.OS === 'android' ? 'sans-serif' : 'System';
   }
 };
 
@@ -363,7 +368,9 @@ const generateSparkles = (count: number, width: number, height: number): Sparkle
 
 export default function CassettePlayer() {
   const { currentTape, tapes, getTapeStyle, selectTape } = useTapes();
-  const { width, height } = useWindowDimensions();
+  const dimensions = useWindowDimensions();
+  const width = dimensions?.width || 375;
+  const height = dimensions?.height || 667;
   const isLandscape = width > height;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRewinding, setIsRewinding] = useState(false);
@@ -383,7 +390,7 @@ export default function CassettePlayer() {
   const starAnimations = useRef<Animated.CompositeAnimation[]>([]);
   const sparkleAnimations = useRef<Animated.CompositeAnimation[]>([]);
 
-  const currentScheme = COLOR_SCHEMES[currentSchemeIndex];
+  const currentScheme = COLOR_SCHEMES[currentSchemeIndex] || COLOR_SCHEMES[0];
   const tapeStyle = currentTape ? getTapeStyle(currentTape.styleId) : TAPE_STYLES[0];
   const isStarryNight = currentScheme.name === 'Starry Night';
   const isDiscoBall = currentScheme.name === 'Disco Ball Gold' || currentScheme.name === 'Disco Ball Silver';

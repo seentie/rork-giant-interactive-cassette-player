@@ -268,7 +268,7 @@ const getStoredTapes = async (): Promise<CustomTape[]> => {
     const stored = await AsyncStorage.getItem('customTapes');
     
     if (!stored || stored.trim() === '' || stored === 'undefined' || stored === 'null') {
-      console.log('No stored tapes found or empty data');
+      console.log('[Tape Storage] No stored tapes found or empty data');
       return [];
     }
     
@@ -276,44 +276,49 @@ const getStoredTapes = async (): Promise<CustomTape[]> => {
     try {
       parsed = JSON.parse(stored);
     } catch (jsonError) {
-      console.error('JSON parse error, corrupted data detected:', jsonError);
-      console.error('Corrupted data:', stored.substring(0, 100));
-      console.log('Clearing corrupted storage');
+      console.error('[Tape Storage] JSON parse error, corrupted data detected:', jsonError);
+      console.log('[Tape Storage] Clearing corrupted storage');
       try {
         await AsyncStorage.removeItem('customTapes');
       } catch (removeError) {
-        console.error('Failed to remove corrupted data:', removeError);
+        console.error('[Tape Storage] Failed to remove corrupted data:', removeError);
       }
       return [];
     }
     
     if (!Array.isArray(parsed)) {
-      console.warn('Stored data is not an array, clearing storage');
+      console.warn('[Tape Storage] Stored data is not an array, clearing storage');
       try {
         await AsyncStorage.removeItem('customTapes');
       } catch (removeError) {
-        console.error('Failed to remove invalid array data:', removeError);
+        console.error('[Tape Storage] Failed to remove invalid array data:', removeError);
       }
       return [];
     }
     
-    const validTapes = parsed.filter((tape: any) => 
-      tape && 
-      typeof tape === 'object' && 
-      tape.id && 
-      tape.name && 
-      tape.styleId
-    );
+    const validTapes = parsed.filter((tape: any) => {
+      const isValid = tape && 
+        typeof tape === 'object' && 
+        typeof tape.id === 'string' &&
+        typeof tape.name === 'string' && 
+        typeof tape.styleId === 'string' &&
+        typeof tape.font === 'string';
+      
+      if (!isValid) {
+        console.warn('[Tape Storage] Invalid tape filtered out:', tape?.id);
+      }
+      return isValid;
+    });
     
-    console.log(`Loaded ${validTapes.length} valid tapes from storage`);
+    console.log(`[Tape Storage] Loaded ${validTapes.length} valid tapes from storage`);
     return validTapes;
   } catch (error) {
-    console.error('Error loading tapes:', error);
+    console.error('[Tape Storage] Critical error loading tapes:', error);
     try {
       await AsyncStorage.removeItem('customTapes');
-      console.log('Cleared corrupted storage after error');
+      console.log('[Tape Storage] Cleared corrupted storage after error');
     } catch (clearError) {
-      console.error('Failed to clear storage:', clearError);
+      console.error('[Tape Storage] Failed to clear storage:', clearError);
     }
     return [];
   }
@@ -321,53 +326,39 @@ const getStoredTapes = async (): Promise<CustomTape[]> => {
 
 const saveStoredTapes = async (tapes: CustomTape[]): Promise<void> => {
   try {
-    
-    const validTapes = tapes.filter(tape => 
-      tape && 
-      typeof tape === 'object' && 
-      tape.id && 
-      tape.name && 
-      tape.styleId
-    );
+    const validTapes = tapes.filter(tape => {
+      const isValid = tape && 
+        typeof tape === 'object' && 
+        typeof tape.id === 'string' &&
+        typeof tape.name === 'string' && 
+        typeof tape.styleId === 'string' &&
+        typeof tape.font === 'string';
+      return isValid;
+    });
     
     if (validTapes.length !== tapes.length) {
-      console.warn('Filtered out invalid tapes:', tapes.length - validTapes.length);
+      console.warn('[Tape Storage] Filtered out invalid tapes:', tapes.length - validTapes.length);
     }
     
     let data;
     try {
       data = JSON.stringify(validTapes);
     } catch (stringifyError) {
-      console.error('JSON stringify error:', stringifyError);
-      throw new Error('Failed to serialize tapes');
-    }
-    
-    if (!data || data === 'null' || data === 'undefined') {
-      console.error('Invalid data to save:', data);
+      console.error('[Tape Storage] JSON stringify error:', stringifyError);
       return;
     }
     
-    console.log('Saving to AsyncStorage, data length:', data.length, 'tapes count:', validTapes.length);
+    if (!data || data === 'null' || data === 'undefined') {
+      console.error('[Tape Storage] Invalid data to save, aborting');
+      return;
+    }
+    
+    console.log('[Tape Storage] Saving to AsyncStorage, tapes count:', validTapes.length);
     
     await AsyncStorage.setItem('customTapes', data);
-    console.log('Successfully saved tapes to storage');
-    
-    const verification = await AsyncStorage.getItem('customTapes');
-    if (verification) {
-      try {
-        const verifiedTapes = JSON.parse(verification);
-        console.log('Verification after save - stored tapes count:', verifiedTapes.length);
-        
-        if (verifiedTapes.length !== validTapes.length) {
-          console.error('ERROR: Tape count mismatch! Expected:', validTapes.length, 'Got:', verifiedTapes.length);
-        }
-      } catch (verifyError) {
-        console.error('Verification parse error:', verifyError);
-      }
-    }
+    console.log('[Tape Storage] Successfully saved tapes to storage');
   } catch (error) {
-    console.error('Error saving tapes:', error);
-    throw error;
+    console.error('[Tape Storage] Critical error saving tapes:', error);
   }
 };
 
@@ -425,28 +416,33 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
     
     const loadData = async () => {
       try {
-        console.log('Loading tapes from storage...');
+        console.log('[Tape Context] Initializing tape storage...');
         const [loadedTapes, settings] = await Promise.all([
           getStoredTapes(),
           getTapeLabelSettings(),
         ]);
         
-        console.log('Loaded tapes count:', loadedTapes.length);
-        console.log('Loaded tapes:', JSON.stringify(loadedTapes.map(t => ({ id: t.id, name: t.name }))));
+        console.log('[Tape Context] Loaded tapes count:', loadedTapes.length);
         
+        if (!mounted) {
+          console.log('[Tape Context] Component unmounted, aborting data load');
+          return;
+        }
+        
+        const defaultTape = getDefaultTape();
+        const hasDefaultTape = loadedTapes.some(t => t.id === DEFAULT_TAPE_ID);
+        const allTapes = hasDefaultTape ? loadedTapes : [defaultTape, ...loadedTapes];
+        
+        console.log('[Tape Context] Setting tapes in state:', allTapes.length);
+        setTapes(allTapes);
+        setTapeLabelSettings(settings);
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('[Tape Context] Critical error loading data:', error);
         if (mounted) {
           const defaultTape = getDefaultTape();
-          const hasDefaultTape = loadedTapes.some(t => t.id === DEFAULT_TAPE_ID);
-          const allTapes = hasDefaultTape ? loadedTapes : [defaultTape, ...loadedTapes];
-          
-          console.log('Setting tapes in state:', allTapes.length);
-          setTapes(allTapes);
-          setTapeLabelSettings(settings);
-          setIsLoaded(true);
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-        if (mounted) {
+          setTapes([defaultTape]);
+          setTapeLabelSettings({ font: 'default' });
           setIsLoaded(true);
         }
       }
@@ -460,13 +456,22 @@ export const [TapeProvider, useTapes] = createContextHook(() => {
   }, []);
 
   useEffect(() => {
-    if (isLoaded) {
-      const tapesToSave = tapes.filter(t => t.id !== DEFAULT_TAPE_ID);
-      console.log('Tapes changed, persisting to storage. Count:', tapesToSave.length, '(excluding default)');
-      saveStoredTapes(tapesToSave).catch(error => {
-        console.error('Failed to persist tapes on change:', error);
-      });
+    if (!isLoaded) {
+      return;
     }
+    
+    const tapesToSave = tapes.filter(t => t.id !== DEFAULT_TAPE_ID);
+    console.log('[Tape Context] Tapes changed, persisting to storage. Count:', tapesToSave.length);
+    
+    const saveTapes = async () => {
+      try {
+        await saveStoredTapes(tapesToSave);
+      } catch (error) {
+        console.error('[Tape Context] Failed to persist tapes on change:', error);
+      }
+    };
+    
+    saveTapes();
   }, [tapes, isLoaded]);
 
   const createTape = useCallback(async (

@@ -5,6 +5,7 @@ import React, { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { TapeProvider } from "./tape-context";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,13 +32,15 @@ function AppContent() {
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TapeProvider>
-        <GestureHandlerRootView style={styles.container}>
-          <AppContent />
-        </GestureHandlerRootView>
-      </TapeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TapeProvider>
+          <GestureHandlerRootView style={styles.container}>
+            <AppContent />
+          </GestureHandlerRootView>
+        </TapeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
