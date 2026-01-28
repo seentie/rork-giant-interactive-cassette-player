@@ -583,28 +583,28 @@ export default function CassettePlayer() {
     leftReelRotation.setValue(0);
     rightReelRotation.setValue(0);
     
-    const leftAnim = Animated.loop(
-      Animated.timing(leftReelRotation, {
-        toValue: leftValue,
-        duration: leftDuration,
-        useNativeDriver: true,
-        easing: (t) => t,
-      }),
-      { resetBeforeIteration: true }
-    );
+    const createLoopAnimation = (animValue: Animated.Value, toValue: number, duration: number) => {
+      const runAnimation = () => {
+        animValue.setValue(0);
+        Animated.timing(animValue, {
+          toValue: toValue,
+          duration: duration,
+          useNativeDriver: true,
+          easing: (t) => t,
+        }).start(({ finished }) => {
+          if (finished) {
+            runAnimation();
+          }
+        });
+      };
+      return { start: runAnimation, stop: () => animValue.stopAnimation() };
+    };
     
-    const rightAnim = Animated.loop(
-      Animated.timing(rightReelRotation, {
-        toValue: rightValue,
-        duration: rightDuration,
-        useNativeDriver: true,
-        easing: (t) => t,
-      }),
-      { resetBeforeIteration: true }
-    );
+    const leftAnim = createLoopAnimation(leftReelRotation, leftValue, leftDuration);
+    const rightAnim = createLoopAnimation(rightReelRotation, rightValue, rightDuration);
     
-    leftReelAnimation.current = leftAnim;
-    rightReelAnimation.current = rightAnim;
+    leftReelAnimation.current = leftAnim as unknown as Animated.CompositeAnimation;
+    rightReelAnimation.current = rightAnim as unknown as Animated.CompositeAnimation;
     
     leftAnim.start();
     rightAnim.start();
