@@ -589,7 +589,8 @@ export default function CassettePlayer() {
         duration: leftDuration,
         useNativeDriver: true,
         easing: (t) => t,
-      })
+      }),
+      { resetBeforeIteration: true }
     );
     
     const rightAnim = Animated.loop(
@@ -598,7 +599,8 @@ export default function CassettePlayer() {
         duration: rightDuration,
         useNativeDriver: true,
         easing: (t) => t,
-      })
+      }),
+      { resetBeforeIteration: true }
     );
     
     leftReelAnimation.current = leftAnim;
