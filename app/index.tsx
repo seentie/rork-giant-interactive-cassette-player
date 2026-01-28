@@ -389,7 +389,8 @@ export default function CassettePlayer() {
   
   const leftReelRotation = useRef(new Animated.Value(0)).current;
   const rightReelRotation = useRef(new Animated.Value(0)).current;
-  const rotationAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  const leftReelAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  const rightReelAnimation = useRef<Animated.CompositeAnimation | null>(null);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const flipRotation = useRef(new Animated.Value(0)).current;
   const starAnimations = useRef<Animated.CompositeAnimation[]>([]);
@@ -582,35 +583,39 @@ export default function CassettePlayer() {
     leftReelRotation.setValue(0);
     rightReelRotation.setValue(0);
     
-    const leftAnimation = Animated.loop(
+    const leftAnim = Animated.loop(
       Animated.timing(leftReelRotation, {
         toValue: leftValue,
         duration: leftDuration,
         useNativeDriver: true,
         easing: (t) => t,
-      }),
-      { iterations: -1, resetBeforeIteration: true }
+      })
     );
     
-    const rightAnimation = Animated.loop(
+    const rightAnim = Animated.loop(
       Animated.timing(rightReelRotation, {
         toValue: rightValue,
         duration: rightDuration,
         useNativeDriver: true,
         easing: (t) => t,
-      }),
-      { iterations: -1, resetBeforeIteration: true }
+      })
     );
     
-    const animation = Animated.parallel([leftAnimation, rightAnimation]);
-    rotationAnimation.current = animation;
-    animation.start();
+    leftReelAnimation.current = leftAnim;
+    rightReelAnimation.current = rightAnim;
+    
+    leftAnim.start();
+    rightAnim.start();
   };
 
   const stopReelAnimation = () => {
-    if (rotationAnimation.current) {
-      rotationAnimation.current.stop();
-      rotationAnimation.current = null;
+    if (leftReelAnimation.current) {
+      leftReelAnimation.current.stop();
+      leftReelAnimation.current = null;
+    }
+    if (rightReelAnimation.current) {
+      rightReelAnimation.current.stop();
+      rightReelAnimation.current = null;
     }
     leftReelRotation.stopAnimation();
     rightReelRotation.stopAnimation();
