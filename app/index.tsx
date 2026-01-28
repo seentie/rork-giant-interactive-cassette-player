@@ -754,7 +754,7 @@ export default function CassettePlayer() {
     outputRange: [1, 0.5, 0, 0.5, 1],
   });
 
-  const landscapeCassetteHeight = height * 0.75;
+  const landscapeCassetteHeight = height * 0.85;
   const landscapeCassetteWidth = landscapeCassetteHeight / 0.62;
 
   if (isLandscape) {
@@ -796,7 +796,19 @@ export default function CassettePlayer() {
         ))}
         <SafeAreaView style={styles.landscapeContainer}>
           <View style={styles.landscapeContent}>
-            <View style={[styles.cassette, { width: landscapeCassetteWidth, height: landscapeCassetteHeight, elevation: 20, shadowOpacity: 0.7 }]}>
+            <Animated.View
+              style={[
+                styles.cassette,
+                {
+                  width: landscapeCassetteWidth,
+                  height: landscapeCassetteHeight,
+                  elevation: 20,
+                  shadowOpacity: 0.7,
+                  transform: [{ rotateY: flipInterpolate }],
+                  opacity: flipOpacity,
+                },
+              ]}
+            >
               <LinearGradient
                 colors={tapeStyle.cassetteBody as [string, string, ...string[]]}
                 style={styles.cassetteBody}
@@ -812,7 +824,7 @@ export default function CassettePlayer() {
                       <View style={{ height: 8 }} />
                       {currentTape?.playlistUrl ? (
                         <TouchableOpacity onPress={() => Linking.openURL(currentTape.playlistUrl!)} activeOpacity={0.7} style={{ marginTop: 4 }}>
-                          <Text style={[styles.playlistUrl, { fontSize: 7 }]} numberOfLines={2} ellipsizeMode="tail">
+                          <Text style={[styles.playlistUrl, { fontSize: 9 }]} numberOfLines={2} ellipsizeMode="tail">
                             {currentTape.playlistUrl}
                           </Text>
                         </TouchableOpacity>
@@ -829,15 +841,15 @@ export default function CassettePlayer() {
                         </View>
                         <Text style={[
                           styles.labelTitle,
-                          { fontSize: 18 },
+                          { fontSize: 22 },
                           { fontFamily: getFontFamily(currentTape.font) },
                           (currentTape.font === 'bold' || (currentTape.font.endsWith('-bold') && currentTape.font !== 'handwriting-bold')) && { fontWeight: '700' as const },
-                          currentTape.font === 'handwriting-bold' && { fontWeight: '900' as const, fontSize: 19 }
+                          currentTape.font === 'handwriting-bold' && { fontWeight: '900' as const, fontSize: 24 }
                         ]} numberOfLines={1} ellipsizeMode="tail">
                           {currentTape.name}
                         </Text>
                         {currentTape.description && (
-                          <Text style={[styles.labelDescription, { fontSize: 12 }]} numberOfLines={2} ellipsizeMode="tail">
+                          <Text style={[styles.labelDescription, { fontSize: 14 }]} numberOfLines={2} ellipsizeMode="tail">
                             {currentTape.description}
                           </Text>
                         )}
@@ -847,8 +859,8 @@ export default function CassettePlayer() {
                         <View style={styles.sideLabelBox}>
                           <Text style={styles.sideLabelBoxText}>A</Text>
                         </View>
-                        <Text style={[styles.labelTitle, { fontSize: 18, fontFamily: getFontFamily('default-bold'), fontWeight: '700' as const }]} numberOfLines={1} ellipsizeMode="tail">My Best Mix Tape &apos;85</Text>
-                        <Text style={[styles.labelDescription, { fontSize: 12 }]} numberOfLines={2} ellipsizeMode="tail">weekend radio mix</Text>
+                        <Text style={[styles.labelTitle, { fontSize: 22, fontFamily: getFontFamily('default-bold'), fontWeight: '700' as const }]} numberOfLines={1} ellipsizeMode="tail">My Best Mix Tape &apos;85</Text>
+                        <Text style={[styles.labelDescription, { fontSize: 14 }]} numberOfLines={2} ellipsizeMode="tail">weekend radio mix</Text>
                       </>
                     )
                   )}
@@ -871,7 +883,7 @@ export default function CassettePlayer() {
                   </View>
 
                   <View style={styles.tapeMiddle}>
-                    <View style={[styles.tapeStrip, { height: 20 }]} />
+                    <View style={[styles.tapeStrip, { height: 24 }]} />
                   </View>
 
                   <View style={[styles.reelContainer, { width: landscapeCassetteWidth * 0.18, height: landscapeCassetteWidth * 0.18 }]}>
@@ -889,13 +901,56 @@ export default function CassettePlayer() {
                 </View>
 
                 <View style={styles.bottomDetails}>
-                  <View style={[styles.screw, { width: 18, height: 18 }]} />
+                  <View style={[styles.screw, { width: 20, height: 20 }]} />
                   <View style={[styles.typeIndicator, { backgroundColor: currentScheme.background[1] }]}>
-                    <Text style={[styles.typeText, { color: currentScheme.accent, fontSize: 10 }]}>TYPE II</Text>
+                    <Text style={[styles.typeText, { color: currentScheme.accent, fontSize: 12 }]}>TYPE II</Text>
                   </View>
-                  <View style={[styles.screw, { width: 18, height: 18 }]} />
+                  <View style={[styles.screw, { width: 20, height: 20 }]} />
                 </View>
               </LinearGradient>
+            </Animated.View>
+
+            {/* Floating Controls */}
+            <View style={styles.landscapeControls}>
+              <TouchableOpacity
+                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                onPress={handleRewind}
+                activeOpacity={0.8}
+              >
+                <SkipBack size={20} color={currentScheme.accent} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.landscapePlayButton, { backgroundColor: 'rgba(0,0,0,0.7)' }]}
+                onPress={isPlaying ? handlePause : handlePlay}
+                activeOpacity={0.8}
+              >
+                <Play size={24} color={currentScheme.accent} fill={currentScheme.accent} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                onPress={handleFastForward}
+                activeOpacity={0.8}
+              >
+                <FastForward size={20} color={currentScheme.accent} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                onPress={handleStop}
+                activeOpacity={0.8}
+              >
+                <Square size={18} color={currentScheme.accent} fill={currentScheme.accent} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                onPress={handleFlipTape}
+                activeOpacity={0.8}
+              >
+                <RotateCcw size={18} color={currentScheme.accent} />
+              </TouchableOpacity>
             </View>
           </View>
         </SafeAreaView>
@@ -1282,6 +1337,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  landscapeControls: {
+    position: 'absolute' as const,
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  landscapeControlButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  landscapePlayButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    paddingLeft: 3,
   },
   content: {
     flex: 1,
