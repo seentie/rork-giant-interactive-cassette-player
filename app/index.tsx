@@ -372,9 +372,14 @@ const generateSparkles = (count: number, width: number, height: number): Sparkle
 export default function CassettePlayer() {
   const { currentTape, tapes, getTapeStyle, selectTape } = useTapes();
   const dimensions = useWindowDimensions();
+  const [orientation, setOrientation] = useState<ScreenOrientation.Orientation | null>(null);
   const width = Math.max(dimensions?.width || 375, 1);
   const height = Math.max(dimensions?.height || 667, 1);
-  const isLandscape = width > height;
+  
+  const isLandscape = orientation !== null 
+    ? (orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT || 
+       orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT)
+    : width > height;
   const SCREEN_WIDTH = width;
   const CASSETTE_WIDTH = SCREEN_WIDTH * 0.85;
   const CASSETTE_HEIGHT = CASSETTE_WIDTH * 0.62;
@@ -400,17 +405,27 @@ export default function CassettePlayer() {
   const currentScheme = COLOR_SCHEMES[currentSchemeIndex] || COLOR_SCHEMES[0];
 
   useEffect(() => {
-    const unlockOrientation = async () => {
+    const setupOrientation = async () => {
       try {
         await ScreenOrientation.unlockAsync();
         console.log('[Orientation] Screen orientation unlocked');
+        
+        const currentOrientation = await ScreenOrientation.getOrientationAsync();
+        console.log('[Orientation] Initial orientation:', currentOrientation);
+        setOrientation(currentOrientation);
       } catch (error) {
-        console.warn('[Orientation] Failed to unlock orientation:', error);
+        console.warn('[Orientation] Failed to setup orientation:', error);
       }
     };
-    unlockOrientation();
+    setupOrientation();
+
+    const subscription = ScreenOrientation.addOrientationChangeListener((event) => {
+      console.log('[Orientation] Orientation changed:', event.orientationInfo.orientation);
+      setOrientation(event.orientationInfo.orientation);
+    });
 
     return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
     };
   }, []);
