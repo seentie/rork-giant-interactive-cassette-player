@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
+import * as ScreenOrientation from "expo-screen-orientation";
 import {
   View,
   Text,
@@ -397,6 +398,23 @@ export default function CassettePlayer() {
   const sparkleAnimations = useRef<Animated.CompositeAnimation[]>([]);
 
   const currentScheme = COLOR_SCHEMES[currentSchemeIndex] || COLOR_SCHEMES[0];
+
+  useEffect(() => {
+    const unlockOrientation = async () => {
+      try {
+        await ScreenOrientation.unlockAsync();
+        console.log('[Orientation] Screen orientation unlocked');
+      } catch (error) {
+        console.warn('[Orientation] Failed to unlock orientation:', error);
+      }
+    };
+    unlockOrientation();
+
+    return () => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+    };
+  }, []);
+
   const tapeStyle = useMemo(() => {
     try {
       return currentTape ? getTapeStyle(currentTape.styleId) : TAPE_STYLES[0];
