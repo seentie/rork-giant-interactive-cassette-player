@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as ScreenOrientation from "expo-screen-orientation";
 import {
   View,
@@ -381,9 +381,7 @@ export default function CassettePlayer() {
   useEffect(() => {
     console.log('[Landscape] Dimensions:', width, 'x', height, 'isLandscape:', isLandscape, 'orientation:', orientation);
   }, [width, height, isLandscape, orientation]);
-  const SCREEN_WIDTH = width;
-  const CASSETTE_WIDTH = SCREEN_WIDTH * 0.85;
-  const CASSETTE_HEIGHT = CASSETTE_WIDTH * 0.62;
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRewinding, setIsRewinding] = useState(false);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
@@ -443,6 +441,58 @@ export default function CassettePlayer() {
   const isDiscoBall = currentScheme.name === 'Disco Ball Gold' || currentScheme.name === 'Disco Ball Silver';
   const isPastelMode = currentScheme.name.includes('Pastel');
 
+  const stopReelAnimation = useCallback(() => {
+    if (leftReelAnimation.current) {
+      leftReelAnimation.current.stop();
+      leftReelAnimation.current = null;
+    }
+    if (rightReelAnimation.current) {
+      rightReelAnimation.current.stop();
+      rightReelAnimation.current = null;
+    }
+    leftReelRotation.stopAnimation();
+    rightReelRotation.stopAnimation();
+  }, [leftReelRotation, rightReelRotation]);
+
+  const startReelAnimation = useCallback((direction: 'play' | 'rewind' | 'fastforward' = 'play') => {
+    stopReelAnimation();
+    
+    const baseDuration = direction === 'fastforward' ? 600 : direction === 'rewind' ? 800 : 1500;
+    const leftDuration = direction === 'rewind' ? baseDuration * 0.6 : baseDuration;
+    const rightDuration = direction === 'rewind' ? baseDuration : baseDuration * 0.7;
+    const leftValue = direction === 'rewind' ? -1 : 1;
+    const rightValue = direction === 'rewind' ? -1 : 1;
+    
+    leftReelRotation.setValue(0);
+    rightReelRotation.setValue(0);
+    
+    const createLoopAnimation = (animValue: Animated.Value, toValue: number, duration: number) => {
+      const runAnimation = () => {
+        animValue.setValue(0);
+        Animated.timing(animValue, {
+          toValue: toValue,
+          duration: duration,
+          useNativeDriver: true,
+          easing: (t) => t,
+        }).start(({ finished }) => {
+          if (finished) {
+            runAnimation();
+          }
+        });
+      };
+      return { start: runAnimation, stop: () => animValue.stopAnimation() };
+    };
+    
+    const leftAnim = createLoopAnimation(leftReelRotation, leftValue, leftDuration);
+    const rightAnim = createLoopAnimation(rightReelRotation, rightValue, rightDuration);
+    
+    leftReelAnimation.current = leftAnim as unknown as Animated.CompositeAnimation;
+    rightReelAnimation.current = rightAnim as unknown as Animated.CompositeAnimation;
+    
+    leftAnim.start();
+    rightAnim.start();
+  }, [stopReelAnimation, leftReelRotation, rightReelRotation]);
+
   useEffect(() => {
     if (isPlaying && !isRewinding && !isFastForwarding) {
       startReelAnimation('play');
@@ -453,7 +503,7 @@ export default function CassettePlayer() {
     } else {
       stopReelAnimation();
     }
-  }, [isPlaying, isRewinding, isFastForwarding]);
+  }, [isPlaying, isRewinding, isFastForwarding, startReelAnimation, stopReelAnimation]);
 
   useEffect(() => {
     if (isPlaying && !isRewinding && !isFastForwarding) {
@@ -463,7 +513,7 @@ export default function CassettePlayer() {
     } else if (isFastForwarding) {
       startReelAnimation('fastforward');
     }
-  }, [isLandscape]);
+  }, [isLandscape, isPlaying, isRewinding, isFastForwarding, startReelAnimation]);
 
   useEffect(() => {
     if (isStarryNight && width > 0 && height > 0) {
@@ -604,58 +654,6 @@ export default function CassettePlayer() {
       sparkleAnimations.current = [];
     };
   }, [isDiscoBall, width, height]);
-
-  const startReelAnimation = (direction: 'play' | 'rewind' | 'fastforward' = 'play') => {
-    stopReelAnimation();
-    
-    const baseDuration = direction === 'fastforward' ? 600 : direction === 'rewind' ? 800 : 1500;
-    const leftDuration = direction === 'rewind' ? baseDuration * 0.6 : baseDuration;
-    const rightDuration = direction === 'rewind' ? baseDuration : baseDuration * 0.7;
-    const leftValue = direction === 'rewind' ? -1 : 1;
-    const rightValue = direction === 'rewind' ? -1 : 1;
-    
-    leftReelRotation.setValue(0);
-    rightReelRotation.setValue(0);
-    
-    const createLoopAnimation = (animValue: Animated.Value, toValue: number, duration: number) => {
-      const runAnimation = () => {
-        animValue.setValue(0);
-        Animated.timing(animValue, {
-          toValue: toValue,
-          duration: duration,
-          useNativeDriver: true,
-          easing: (t) => t,
-        }).start(({ finished }) => {
-          if (finished) {
-            runAnimation();
-          }
-        });
-      };
-      return { start: runAnimation, stop: () => animValue.stopAnimation() };
-    };
-    
-    const leftAnim = createLoopAnimation(leftReelRotation, leftValue, leftDuration);
-    const rightAnim = createLoopAnimation(rightReelRotation, rightValue, rightDuration);
-    
-    leftReelAnimation.current = leftAnim as unknown as Animated.CompositeAnimation;
-    rightReelAnimation.current = rightAnim as unknown as Animated.CompositeAnimation;
-    
-    leftAnim.start();
-    rightAnim.start();
-  };
-
-  const stopReelAnimation = () => {
-    if (leftReelAnimation.current) {
-      leftReelAnimation.current.stop();
-      leftReelAnimation.current = null;
-    }
-    if (rightReelAnimation.current) {
-      rightReelAnimation.current.stop();
-      rightReelAnimation.current = null;
-    }
-    leftReelRotation.stopAnimation();
-    rightReelRotation.stopAnimation();
-  };
 
   const animateButtonPress = () => {
     Animated.sequence([
