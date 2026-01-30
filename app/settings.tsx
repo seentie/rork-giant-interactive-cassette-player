@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { X, Shield, Info, Mail, ExternalLink, HelpCircle, Type, Share2, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Shield, Info, Mail, ExternalLink, HelpCircle, Type, Share2, Trash2 } from "lucide-react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
@@ -167,7 +167,7 @@ export default function Settings() {
             onPress={handleClose}
             activeOpacity={0.8}
           >
-            <X size={24} color="#F5E6D3" />
+            <ArrowLeft size={24} color="#F5E6D3" />
           </TouchableOpacity>
         </View>
 
