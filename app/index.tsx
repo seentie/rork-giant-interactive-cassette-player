@@ -942,49 +942,6 @@ export default function CassettePlayer() {
                 </View>
               </LinearGradient>
             </Animated.View>
-
-            {/* Floating Controls */}
-            <View style={styles.landscapeControls}>
-              <TouchableOpacity
-                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
-                onPress={handleRewind}
-                activeOpacity={0.8}
-              >
-                <SkipBack size={20} color={currentScheme.accent} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.landscapePlayButton, { backgroundColor: 'rgba(0,0,0,0.7)' }]}
-                onPress={isPlaying ? handlePause : handlePlay}
-                activeOpacity={0.8}
-              >
-                <Play size={24} color={currentScheme.accent} fill={currentScheme.accent} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
-                onPress={handleFastForward}
-                activeOpacity={0.8}
-              >
-                <FastForward size={20} color={currentScheme.accent} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
-                onPress={handleStop}
-                activeOpacity={0.8}
-              >
-                <Square size={18} color={currentScheme.accent} fill={currentScheme.accent} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.landscapeControlButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
-                onPress={handleFlipTape}
-                activeOpacity={0.8}
-              >
-                <RotateCcw size={18} color={currentScheme.accent} />
-              </TouchableOpacity>
-            </View>
           </View>
         </SafeAreaView>
       </LinearGradient>

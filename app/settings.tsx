@@ -58,7 +58,11 @@ export default function Settings() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.back();
+    if (router.canDismiss()) {
+      router.dismiss();
+    } else {
+      router.back();
+    }
   };
   
   const handleShareInstructions = async () => {
