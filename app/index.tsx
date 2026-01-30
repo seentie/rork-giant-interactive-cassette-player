@@ -376,7 +376,8 @@ export default function CassettePlayer() {
   const width = Math.max(dimensions?.width || 375, 1);
   const height = Math.max(dimensions?.height || 667, 1);
   
-  const isLandscape = width > height;
+  const isLandscape = orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT || 
+                      orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
   
   useEffect(() => {
     console.log('[Landscape] Dimensions:', width, 'x', height, 'isLandscape:', isLandscape, 'orientation:', orientation);
